@@ -1,4 +1,4 @@
-# propertypriceregister
+# Property Price Register
 
 ## About 
   Download Property Sales in Ireland from propertypriceregister.ie to a CSV file. All data is downloaded from propertypriceregister https://www.propertypriceregister.ie
