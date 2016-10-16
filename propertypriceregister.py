@@ -62,8 +62,8 @@ for year in AllYears:
         browser["StartMonth"] = ["01"]
         browser["EndMonth"] = ["12"]
         browser.submit()
-        html = browser.response().read()
         print "Searching: "+county+", "+year
+        html = browser.response().read()
         soup = BeautifulSoup(html, "html.parser")
         results = soup.find("table", {"class" : "resultsTable"})
         for row in results.findAll("tr"):
