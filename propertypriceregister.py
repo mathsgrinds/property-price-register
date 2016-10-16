@@ -8,6 +8,7 @@ import unicodedata
 import re
 import urllib2
 
+# Set this to "False" for faster downloading but of course without eircodes in the address
 witheircodes = True
 
 useragent = "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0"
