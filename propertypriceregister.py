@@ -63,7 +63,7 @@ for year in AllYears:
         browser["EndMonth"] = ["12"]
         browser.submit()
         html = browser.response().read()
-        print "\n"+county+", "+year,
+        print "Searching: "+county+", "+year
         soup = BeautifulSoup(html, "html.parser")
         results = soup.find("table", {"class" : "resultsTable"})
         for row in results.findAll("tr"):
@@ -82,7 +82,6 @@ for year in AllYears:
                     else:
                         entry += '"'+link.contents[0].replace("\n","")+'","'+county+'"\n'                        
                     entry = str(unicodedata.normalize('NFKD', entry).encode('ascii','ignore'))
-                    print ".",
             if witheircodes:
                 with open(filename,'a') as f: f.write(entry)
         if not witheircodes:
