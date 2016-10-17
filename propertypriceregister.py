@@ -85,7 +85,8 @@ for year in AllYears:
                     entry = str(unicodedata.normalize('NFKD', entry).encode('ascii','ignore'))
             if witheircodes:
                 with open(filename,'a') as f: f.write(entry)
+                entry = ''
         if not witheircodes:
             with open(filename,'a') as f: f.write(entry)
-        entry = ''
+            entry = ''
 quit()
