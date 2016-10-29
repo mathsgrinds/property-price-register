@@ -7,30 +7,23 @@ from bs4 import BeautifulSoup
 import unicodedata
 import re
 import urllib2
-import threading
 
+global AllCounties
+global AllYears
+
+mechanize._sockettimeout._GLOBAL_DEFAULT_TIMEOUT = 100
 url = "https://www.propertypriceregister.ie/website/npsra/pprweb.nsf/PPR?OpenForm"
 useragent = "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0"
 browser = mechanize.Browser(factory=mechanize.RobustFactory())
 browser.addheaders = [('User-agent',useragent)]
 browser.open(url)
 browser.select_form(nr=0)
-
 AllCounties = browser.possible_items("County")
 AllCounties = [x for x in AllCounties if x]
-
 AllYears = browser.possible_items("Year")
 AllYears = [x for x in AllYears if x]
 
-
-if not os.path.exists("propertypriceregister.csv"):
-    header = '"Date","Price","Address","FullMarketPrice","RoutingKey","County","NewDwelling"'+"\n"      
-    with open("propertypriceregister.csv", 'a') as f:
-        f.write(header)
-
-
 def routingkey(address):
-    #Oddly An Post does not have addresses in Irish in their Database - these will always fail.
     useragent = "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0"
     browser = mechanize.Browser(factory=mechanize.RobustFactory())
     url = "http://correctaddress.anpost.ie/pages/Search.aspx"
@@ -60,48 +53,52 @@ def New(url):
     
 def worker(year):
     for county in AllCounties:
-        useragent = "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0"
-        url = "https://www.propertypriceregister.ie/website/npsra/pprweb.nsf/PPR?OpenForm"
-        browser.addheaders = [('User-agent',useragent)]
-        browser.open(url)
-        browser.select_form(nr=0)
-        browser["Year"] = [year]
-        browser["County"] = [county]
-        browser["StartMonth"] = ["01"]
-        browser["EndMonth"] = ["12"]
-        browser.submit()
-        print "Searching: "+county+", "+year
-        html = browser.response().read()
-        soup = BeautifulSoup(html, "html.parser")
-        results = soup.find("table", {"class" : "resultsTable"})
-        for row in results.findAll("tr"):
+        while True:
             try:
-                r = str(row).split("</td>")
-                Date = re.sub('<[^>]*>', '', r[0])
-                Price = re.sub('<[^>]*>', '', r[1])
-                Price = Price[3:].replace(",","")
-                for x in re.findall("href=\".*\"\s", r[2]):
-                    NewDwelling = New("https://www.propertypriceregister.ie/website/npsra/PPR/npsra-ppr.nsf/"+x.replace('href="','').replace('"',''))
-                if " **" in Price:
-                    FullMarketPrice = "FALSE"
-                else:
-                    FullMarketPrice = "TRUE"
-                Price = Price.replace(" **","")
-                Address = re.sub('<[^>]*>', '', r[2]).upper()
-                RoutingKey = routingkey(Address)
-                entry =  '"'+Date+'","'+Price+'","'+Address+'","'+FullMarketPrice+'","'+county+'","'+RoutingKey+'","'+NewDwelling+'"'+"\n"
-                #print entry
-                with open("propertypriceregister.csv",'a') as f: f.write(entry)
+                print "Downloading: "+county
+                useragent = "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0"
+                url = "https://www.propertypriceregister.ie/website/npsra/pprweb.nsf/PPR?OpenForm"
+                browser.addheaders = [('User-agent',useragent)]
+                browser.open(url)
+                browser.select_form(nr=0)
+                browser["Year"] = [year]
+                browser["County"] = [county]
+                browser["StartMonth"] = ["01"]
+                browser["EndMonth"] = ["12"]
+                browser.submit()
+                html = browser.response().read()
+                soup = BeautifulSoup(html, "html.parser")
+                results = soup.find("table", {"class" : "resultsTable"})
+                break
             except:
-                pass
+                continue
+        for row in (results.findAll("tr"))[2:]:
+            while True:
+                try:
+                    r = str(row).split("</td>")
+                    Date = re.sub('<[^>]*>', '', r[0])
+                    Price = re.sub('<[^>]*>', '', r[1])
+                    Price = Price[3:].replace(",","")
+                    for x in re.findall("href=\".*\"\s", r[2]):
+                        NewDwelling = New("https://www.propertypriceregister.ie/website/npsra/PPR/npsra-ppr.nsf/"+x.replace('href="','').replace('"',''))
+                    if " **" in Price:
+                        FullMarketPrice = "FALSE"
+                    else:
+                        FullMarketPrice = "TRUE"
+                    Price = Price.replace(" **","")
+                    Address = re.sub('<[^>]*>', '', r[2]).upper()
+                    RoutingKey = routingkey(Address)
+                    entry =  '"'+Date+'","'+Price+'","'+Address+'","'+FullMarketPrice+'","'+county+'","'+RoutingKey+'","'+NewDwelling+'"'+"\n"
+                    if not os.path.exists(year+".csv"):
+                        header = '"Date","Price","Address","FullMarketPrice","County","RoutingKey","NewDwelling"'+"\n"      
+                        with open(year+".csv", 'a') as f:
+                            f.write(header)
+                    with open(year+".csv",'a') as f: f.write(entry)
+                    break
+                except:
+                    continue
 
-
-
-threads = []
 for year in AllYears:
-    time.sleep(20)
-    t = threading.Thread(target=worker, args=(year,))
-    threads.append(t)
-    t.start()
-    time.sleep(20)
+    worker(year)
 
+quit()
