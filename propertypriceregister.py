@@ -99,6 +99,7 @@ def worker(year):
                     continue
 
 for year in AllYears:
+    print " \n " + str(year) + " \n "
     worker(year)
 
 quit()
