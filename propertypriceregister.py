@@ -39,7 +39,7 @@ def routingkey(address):
     routingkey = "NA"
     for x in re.findall("[A-Z][0-9][0-9]\s[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]", html):
         routingkey = x.split(" ")[0]
-    return routingkey
+		return routingkey
 
 def New(url):
     useragent = "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0"
@@ -98,8 +98,6 @@ def worker(year):
                 except:
                     continue
 
-for year in AllYears:
-    print " \n " + str(year) + " \n "
-    worker(year)
+worker("2010") # Example: Download sales from 2010 into a CSV file
 
 quit()
