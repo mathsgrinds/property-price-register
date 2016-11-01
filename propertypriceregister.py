@@ -8,6 +8,7 @@ import unicodedata
 import re
 import urllib2
 import threading
+from random import shuffle
 
 global AllCounties
 global AllYears
@@ -122,9 +123,11 @@ def SaveEntry(filename, entry):
 
 def worker(year):
     j = int(year)-int(min(AllYears))
+    shuffle(AllCounties)
     for county in AllCounties:
         results = DownloadRegister(year, county)
         if results != "NA":
+            shuffle((results.findAll("tr"))[2:])
             for result in (results.findAll("tr"))[2:]:
                 r = str(result).split("</td>")
                 Date = re.sub('<[^>]*>', '', r[0])
