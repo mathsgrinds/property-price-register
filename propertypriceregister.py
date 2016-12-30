@@ -37,9 +37,10 @@ for year in AllYears:
         pass
 
 def GetRoutingKey(address):
-    while True:
+    attempt = 1
+    while attempt <= 3:
         try:
-            print "Getting Routing Key for "+address
+            print "Getting Routing Key for " + address + " (Attempt "+str(attempt)+"/3)"
             useragent = "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0"
             browser = mechanize.Browser(factory=mechanize.RobustFactory())
             url = "http://correctaddress.anpost.ie/pages/Search.aspx"
@@ -62,8 +63,9 @@ def GetRoutingKey(address):
                 except:
                     return "NA"
         except:
-            pass
-
+            attempt += 1
+	return "NA"
+	
 def DownloadRegister(year, county):
     while True:
         try:
@@ -129,30 +131,31 @@ def worker(year):
         if results != "NA":
             shuffle((results.findAll("tr"))[2:])
             for result in (results.findAll("tr"))[2:]:
-                r = str(result).split("</td>")
-                Date = re.sub('<[^>]*>', '', r[0])
-                url = "https://www.propertypriceregister.ie/website/npsra/PPR/npsra-ppr.nsf/" + r[2].split('"')[1]
-                Price = (re.sub('<[^>]*>', '', r[1]))[3:].replace(",","")
-                if " **" in Price:
-                    FullMarketPrice = "FALSE"
-                else:
-                    FullMarketPrice = "TRUE"
-                Price = Price.replace(" **","")
-                Address = re.sub('<[^>]*>', '', r[2]).upper()
-                if Address not in data[j]:
-                    RoutingKey = GetRoutingKey(Address)
-                    SaleInfo = GetSaleInfo(url)
-                    VATExclusive = str(SaleInfo).split("<tr>")[4].split("<td>")[2].split("</td>")[0].strip("\n").strip(" ").replace("Yes","TRUE").replace("No","FALSE")
-                    DescriptionofProperty = str(SaleInfo).split("<tr>")[5].split("<td>")[2].split("</td>")[0].strip("\n").strip(" ")
-                    PropertySizeDesc =  str(SaleInfo).split("<tr>")[6].split("<td>")[2].split("</td>")[0].strip("\n").strip(" ")
-                    OtherPropertiesInThisSale = str(SaleInfo).split("<tr>")[7].split("<td>")[1].split("</td>")[0].strip("\n").strip(" ")
-                    entry =  ('"'+Address+'","'+RoutingKey+'","'+Date+'","'+Price+'","'+FullMarketPrice+'","'+VATExclusive+'","'+DescriptionofProperty+'","'+PropertySizeDesc+'","'+OtherPropertiesInThisSale+'"'+"\n").upper()
-                    SaveEntry(year, entry)
-                else:
-                    try:
+                try:
+                    r = str(result).split("</td>")
+                    Date = re.sub('<[^>]*>', '', r[0])
+                    url = "https://www.propertypriceregister.ie/website/npsra/PPR/npsra-ppr.nsf/" + r[2].split('"')[1]
+                    Price = (re.sub('<[^>]*>', '', r[1]))[3:].replace(",","")
+                    if " **" in Price:
+                        FullMarketPrice = "FALSE"
+                    else:
+                        FullMarketPrice = "TRUE"
+                    Price = Price.replace(" **","")
+                    Address = re.sub('<[^>]*>', '', r[2]).upper()
+                    if Address not in data[j]:
+                        RoutingKey = GetRoutingKey(Address)
+                        SaleInfo = GetSaleInfo(url)
+                        VATExclusive = str(SaleInfo).split("<tr>")[4].split("<td>")[2].split("</td>")[0].strip("\n").strip(" ").replace("Yes","TRUE").replace("No","FALSE")
+                        DescriptionofProperty = str(SaleInfo).split("<tr>")[5].split("<td>")[2].split("</td>")[0].strip("\n").strip(" ")
+                        PropertySizeDesc =  str(SaleInfo).split("<tr>")[6].split("<td>")[2].split("</td>")[0].strip("\n").strip(" ")
+                        OtherPropertiesInThisSale = str(SaleInfo).split("<tr>")[7].split("<td>")[1].split("</td>")[0].strip("\n").strip(" ")
+                        entry =  ('"'+Address+'","'+RoutingKey+'","'+Date+'","'+Price+'","'+FullMarketPrice+'","'+VATExclusive+'","'+DescriptionofProperty+'","'+PropertySizeDesc+'","'+OtherPropertiesInThisSale+'"'+"\n").upper()
+                        SaveEntry(year, entry)
+                    else:
                         print "Skipping: "+Address.rstrip("\n")
-                    except:
-                        pass
+                except:
+                    print "Error: Skipping Entry.\n"
+                    continue
 
 threads = []
 for i in AllYears:
